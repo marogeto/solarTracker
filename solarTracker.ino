@@ -15,6 +15,13 @@
 
 #define matrix         13
 int i, ldrmax = 0; 
+byte oben=B11110000;
+byte unten=B00001111;
+  
+byte ro[4]={B00100000,B00100000,B00010000,B00111110};
+byte lu[4]={B00010010,B00100010,B00100010,B00011100};
+byte ui[4]={B00000100,B00000010,B00000010,B00111100};
+
 
 void setup() {
   //--- Motor Vertikal ---
@@ -43,24 +50,42 @@ void setup() {
 }
 
 void solarTracker(){
-  byte oben=B11110000;
-  byte unten=B00001111;
+  // Intensität als Spannungswert...
   orldr = analogRead(obenrechtsLDR);
   urldr = analogRead(untenrechtsLDR);
   olldr = analogRead(obenlinksLDR);
   ulldr = analogRead(untenlinksLDR);
-  byte ro[4]={B00100000,B00100000,B00010000,B00111110};
-  byte lu[4]={B00010010,B00100010,B00100010,B00011100};
-  byte ui[4]={B00000100,B00000010,B00000010,B00111100};
   
+  // Maximale Intensität bestimmen
 /*  if(ldr1 >= ldr2 && ldr1 > ldrmax)
     ldrmax = ldr1;
   else if(ldr2 >= ldr1 && ldr2 > ldrmax)
     ldrmax = ldr2;
 */
   ldrmax = 300;
+  // Intensitäten aufgrund der maximalen Itensität
+  // Berechnen
   int orint = (int) (ldr1*15)/ldrmax;
   int urint = (int) (ldr2*15)/ldrmax;
+  int olint = (int) (ldr1*15)/ldrmax;
+  int ulint = (int) (ldr2*15)/ldrmax;
+
+  // Horizontale Bewegung
+  if( orint <= olint || urint <= ulint ){
+    // Bewegung nach rechts
+  }
+  else if( olint <= orint || ulint <= urint ){
+    //Bewegung nach links
+  }
+
+  // Vertikale Bewegung
+  if( orint <= urint || olint <= ulint ){
+    // Bewegung nach unten
+  }
+  else if( urint <= orint || ulint <= olint ){
+    //Bewegung nach oben
+  }
+
     //digitalWrite(ENABLE,HIGH); // enable on
   analogWrite(ENABLE,180);
 
