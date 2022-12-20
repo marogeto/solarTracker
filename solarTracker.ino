@@ -24,12 +24,6 @@ email: roesner@elektronikschule.de
  */
 LedControl lc=LedControl(12,10,11,1);
 
-/* image switching time */
-unsigned long delaytime1=500;
-unsigned long delaytime2=50;
-int ldr1, ldr2, ldrmax = 0, int1, int2;
-
-
 //Motor Vertikal
 #define VENABLE         5
 #define VODIR           3
@@ -45,22 +39,19 @@ int ldr1, ldr2, ldrmax = 0, int1, int2;
 #define untenlinksLDR   6 
 
 #define matrix         13
-
-int i, ldrmax = 0; 
+ 
 byte oben=B11110000;
 byte unten=B00001111;
-
+/* image switching time */
+unsigned long delaytime1=500;
+unsigned long delaytime2=50;
+int i, ldr1, ldr2, ldrmax = 0;
+int orldr, urldr, olldr, ulldr;
+int orint, urint, olint, ulint;
 byte ro[4]={B00100000,B00100000,B00010000,B00111110};
 byte lu[4]={B00010010,B00100010,B00100010,B00011100};
 byte ui[4]={B00000100,B00000010,B00000010,B00111100};
 
-Serial.println("            _          _____              _             ");
-Serial.println("           | |        |_   _|            | |            ");
-Serial.println("  ___  ___ | | __ _ _ __| |_ __ __ _  ___| | _____ _ __ ");
-Serial.println(" / __|/ _ \| |/ _` | '__| | '__/ _` |/ __| |/ / _ \ '__|");
-Serial.println(" \__ \ (_) | | (_| | |  | | | | (_| | (__|   <  __/ |   ");
-Serial.println(" |___/\___/|_|\__,_|_|  \_/_|  \__,_|\___|_|\_\___|_|   ");
-Serial.println();
 
 void setup() {
   //--- Motor Vertikal ---
@@ -73,6 +64,13 @@ void setup() {
   pinMode(HRDIR,OUTPUT);
   //--- Monitor
   Serial.begin(9600);
+  Serial.println("            _          _____              _             ");
+  Serial.println("           | |        |_   _|            | |            ");
+  Serial.println("  ___  ___ | | __ _ _ __| |_ __ __ _  ___| | _____ _ __ ");
+  Serial.println(" / __|/ _ \| |/ _` | '__| | '__/ _` |/ __| |/ / _ \ '__|");
+  Serial.println(" \__ \ (_) | | (_| | |  | | | | (_| | (__|   <  __/ |   ");
+  Serial.println(" |___/\___/|_|\__,_|_|  \_/_|  \__,_|\___|_|\_\___|_|   ");
+  Serial.println();
   //--- Fotodioden ---
   //analogRead(3)
   //analogRead(4)
@@ -93,53 +91,74 @@ void solarTracker(){
   ulldr = analogRead(untenlinksLDR); //6
 
   // Maximale Intensität bestimmen
-/*  if(ldr1 >= ldr2 && ldr1 > ldrmax)
-    ldrmax = ldr1;
-  else if(ldr2 >= ldr1 && ldr2 > ldrmax)
-    ldrmax = ldr2;
-*/
+  if(orldr >= olldr && orldr > ldrmax)
+    ldrmax = orldr;
+  else if(olldr >= orldr && olldr > ldrmax)
+    ldrmax = olldr;
+
   ldrmax = 300;
   // Intensitäten aufgrund der maximalen Itensität
   // Berechnen
-  int orint = (int) (ldr1*15)/ldrmax;
-  int urint = (int) (ldr2*15)/ldrmax;
-  int olint = (int) (ldr1*15)/ldrmax;
-  int ulint = (int) (ldr2*15)/ldrmax;
+  int orint = (int) (orldr * 1.5) / ldrmax;
+  int urint = (int) (urldr * 1.5) / ldrmax;
+  int olint = (int) (olldr * 1.5) / ldrmax;
+  int ulint = (int) (ulldr * 1.5) / ldrmax;
 
-  // Motor"stärke" einstellen
-  //digitalWrite(VENABLE,HIGH); // enable on
-  //digitalWrite(HENABLE,HIGH); // enable on 
-  analogWrite(VENABLE,180);
-  analogWrite(HENABLE,180);
+  // Motor"stärke" einstellen 
+  //analogWrite(VENABLE,180);
+  //analogWrite(HENABLE,180);
+  digitalWrite(VENABLE,HIGH);
+  digitalWrite(HENABLE,HIGH);
 
   // Horizontale Bewegung
-  if( orint <= olint || urint <= ulint ){
+  if( orint < olint || urint < ulint ){
     // Bewegung nach rechts
     Serial.print(" -> ");
     digitalWrite(HRDIR,HIGH); //one way
     digitalWrite(HLDIR,LOW);
     delay(100);
+    digitalWrite(HRDIR,LOW);
   }
-  else if( olint <= orint || ulint <= urint ){
+  else if( olint < orint || ulint < urint ){
     //Bewegung nach links
     Serial.print(" <- ");
     digitalWrite(HRDIR,LOW);  //reverse
     digitalWrite(HLDIR,HIGH);
     delay(100);
+    digitalWrite(HLDIR,LOW);
+  }
+  else{
+    digitalWrite(HRDIR,LOW);
+    digitalWrite(HLDIR,LOW);
+    delay(100);
   }
 
   // Vertikale Bewegung
-  if( orint <= urint || olint <= ulint ){
+  if( orint < urint || olint < ulint ){
     // Bewegung nach unten
-    Serial.println(" v ");
-    digitalWrite(VUDIR,HIGH); //one way
+    Serial.print(" v  : ObenRechts/UntenRechts: ");
+    Serial.print(orint);
+    Serial.println(urint);
+    digitalWrite(VUDIR,HIGH);
     digitalWrite(VODIR,LOW);
     delay(100);
+    digitalWrite(VUDIR,LOW);
   }
-  else if( urint <= orint || ulint <= olint ){
+  else if( urint < orint || ulint < olint ){
     //Bewegung nach oben
-    Serial.println(" ^ ");
-    digitalWrite(VODIR,HIGH); //one way
+    Serial.print(" ^  : ObenRechts/UntenRechts: ");
+    Serial.print(orint);
+    Serial.println(urint);
+    digitalWrite(VODIR,HIGH);
+    digitalWrite(VUDIR,LOW);
+    delay(100);
+    digitalWrite(VODIR,LOW);
+  }
+  else{
+    Serial.print(" -  : ObenRechts/UntenRechts: ");
+    Serial.print(orint);
+    Serial.println(urint);
+    digitalWrite(VODIR,LOW);
     digitalWrite(VUDIR,LOW);
     delay(100);
   }
@@ -154,7 +173,6 @@ void solarTracker(){
   delay(delaytime2);
   lc.clearDisplay(0);
 
-
   lc.setIntensity(0, olint);
   for(int m=4; m<=7; m++) lc.setRow(0,m,unten);
   delay(delaytime2);
@@ -168,7 +186,6 @@ void solarTracker(){
 
 
 void loop() {
-  Serial.println("One way, then reverse");
   solarTracker();
 }
    
