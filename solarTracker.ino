@@ -1,4 +1,15 @@
+/*         _          _____              _             
+          | |        |_   _|            | |            
+ ___  ___ | | __ _ _ __| |_ __ __ _  ___| | _____ _ __ 
+/ __|/ _ \| |/ _` | '__| | '__/ _` |/ __| |/ / _ \ '__|
+\__ \ (_) | | (_| | |  | | | | (_| | (__|   <  __/ |   
+|___/\___/|_|\__,_|_|  \_/_|  \__,_|\___|_|\_\___|_|   
 
+Autor: Finn Wattenbach und Martin Rösner
+email: finn.wattenbach@gmx.de
+email: roesner@elektronikschule.de
+
+*/
 //Motor Vertikal
 #define VENABLE         5
 #define VODIR           3
@@ -8,10 +19,10 @@
 #define HLDIR           6
 #define HRDIR           7
 // LDR's
-#define obenrechtsLDR   9
-#define obenlinksLDR   10
-#define untenrechtsLDR 11
-#define untenlinksLDR  12
+#define obenrechtsLDR   3
+#define obenlinksLDR    4
+#define untenrechtsLDR  5
+#define untenlinksLDR   6 
 
 #define matrix         13
 int i, ldrmax = 0; 
@@ -22,6 +33,13 @@ byte ro[4]={B00100000,B00100000,B00010000,B00111110};
 byte lu[4]={B00010010,B00100010,B00100010,B00011100};
 byte ui[4]={B00000100,B00000010,B00000010,B00111100};
 
+Serial.println("            _          _____              _             ");
+Serial.println("           | |        |_   _|            | |            ");
+Serial.println("  ___  ___ | | __ _ _ __| |_ __ __ _  ___| | _____ _ __ ");
+Serial.println(" / __|/ _ \| |/ _` | '__| | '__/ _` |/ __| |/ / _ \ '__|");
+Serial.println(" \__ \ (_) | | (_| | |  | | | | (_| | (__|   <  __/ |   ");
+Serial.println(" |___/\___/|_|\__,_|_|  \_/_|  \__,_|\___|_|\_\___|_|   ");
+Serial.println();
 
 void setup() {
   //--- Motor Vertikal ---
@@ -35,27 +53,24 @@ void setup() {
   //--- Monitor
   Serial.begin(9600);
   //--- Fotodioden ---
-  //Serial.print(analogRead(3));
-  //Serial.println(analogRead(4))
-  /*
-   The MAX72XX is in power-saving mode on startup,
-   we have to do a wakeup call
-   */
+  //analogRead(3)
+  //analogRead(4)
+  
+  // The MAX72XX is in power-saving mode on startup, we have to do a wakeup call
   lc.shutdown(0,false);
-  /* Set the brightness to a medium values */
+  // Helligkeit des Mediums setzen
   lc.setIntensity(0,matrix);
-  /* and clear the display */
+  // Display löschen
   lc.clearDisplay(0);
-
 }
 
 void solarTracker(){
   // Intensität als Spannungswert...
-  orldr = analogRead(obenrechtsLDR);
-  urldr = analogRead(untenrechtsLDR);
-  olldr = analogRead(obenlinksLDR);
-  ulldr = analogRead(untenlinksLDR);
-  
+  orldr = analogRead(obenrechtsLDR); //3
+  urldr = analogRead(untenrechtsLDR);//5
+  olldr = analogRead(obenlinksLDR);  //4
+  ulldr = analogRead(untenlinksLDR); //6
+
   // Maximale Intensität bestimmen
 /*  if(ldr1 >= ldr2 && ldr1 > ldrmax)
     ldrmax = ldr1;
@@ -70,44 +85,43 @@ void solarTracker(){
   int olint = (int) (ldr1*15)/ldrmax;
   int ulint = (int) (ldr2*15)/ldrmax;
 
+  // Motor"stärke" einstellen
+  //digitalWrite(VENABLE,HIGH); // enable on
+  //digitalWrite(HENABLE,HIGH); // enable on 
+  analogWrite(VENABLE,180);
+  analogWrite(HENABLE,180);
+
   // Horizontale Bewegung
   if( orint <= olint || urint <= ulint ){
     // Bewegung nach rechts
+    Serial.print(" -> ");
+    digitalWrite(HRDIR,HIGH); //one way
+    digitalWrite(HLDIR,LOW);
+    delay(100);
   }
   else if( olint <= orint || ulint <= urint ){
     //Bewegung nach links
+    Serial.print(" <- ");
+    digitalWrite(HRDIR,LOW);  //reverse
+    digitalWrite(HLDIR,HIGH);
+    delay(100);
   }
 
   // Vertikale Bewegung
   if( orint <= urint || olint <= ulint ){
     // Bewegung nach unten
+    Serial.println(" v ");
+    digitalWrite(VUDIR,HIGH); //one way
+    digitalWrite(VODIR,LOW);
+    delay(100);
   }
   else if( urint <= orint || ulint <= olint ){
     //Bewegung nach oben
+    Serial.println(" ^ ");
+    digitalWrite(VODIR,HIGH); //one way
+    digitalWrite(VUDIR,LOW);
+    delay(100);
   }
-
-    //digitalWrite(ENABLE,HIGH); // enable on
-  analogWrite(ENABLE,180);
-
-
-
-  for (i=0;i<5;i++) {
-    digitalWrite(DIRA,HIGH); //one way
-    digitalWrite(DIRB,LOW);
-    delay(1000);
-    digitalWrite(DIRA,LOW);  //reverse
-    digitalWrite(DIRB,HIGH);
-    delay(1000);
-  }
-  Serial.print(ldr1);
-  Serial.print(" ---- ");
-  Serial.print(ldr2);
-  Serial.print(" ---- ");
-  Serial.print(ldrmax);
-  Serial.print(" ---- ");
-  Serial.print(int1);
-  Serial.print(" ---- ");
-  Serial.println(int2);
 
   lc.setIntensity(0, orint);
   for(int m=0; m<=4; m++) lc.setRow(0,m,oben);
@@ -134,6 +148,6 @@ void solarTracker(){
 
 void loop() {
   Serial.println("One way, then reverse");
-  solartracker();
+  solarTracker();
 }
    
