@@ -10,6 +10,26 @@ email: finn.wattenbach@gmx.de
 email: roesner@elektronikschule.de
 
 */
+
+//We always have to include the library
+#include "LedControl.h"
+
+/*
+ Now we need a LedControl to work with.
+ ***** These pin numbers will probably not work with your hardware *****
+ pin 12 is connected to the DataIn 
+ pin 11 is connected to LOAD(CS)
+ pin 10 is connected to the CLK 
+ We have only a single MAX72XX.
+ */
+LedControl lc=LedControl(12,10,11,1);
+
+/* image switching time */
+unsigned long delaytime1=500;
+unsigned long delaytime2=50;
+int ldr1, ldr2, ldrmax = 0, int1, int2;
+
+
 //Motor Vertikal
 #define VENABLE         5
 #define VODIR           3
@@ -25,10 +45,11 @@ email: roesner@elektronikschule.de
 #define untenlinksLDR   6 
 
 #define matrix         13
+
 int i, ldrmax = 0; 
 byte oben=B11110000;
 byte unten=B00001111;
-  
+
 byte ro[4]={B00100000,B00100000,B00010000,B00111110};
 byte lu[4]={B00010010,B00100010,B00100010,B00011100};
 byte ui[4]={B00000100,B00000010,B00000010,B00111100};
@@ -134,12 +155,12 @@ void solarTracker(){
   lc.clearDisplay(0);
 
 
-  lc.setIntensity(0, int1);
+  lc.setIntensity(0, olint);
   for(int m=4; m<=7; m++) lc.setRow(0,m,unten);
   delay(delaytime2);
   lc.clearDisplay(0);
 
-  lc.setIntensity(0, int2);
+  lc.setIntensity(0, ulint);
   for(int m=4; m<=7; m++) lc.setRow(0,m,oben);
   delay(delaytime2);
   lc.clearDisplay(0); 
