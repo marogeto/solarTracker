@@ -160,7 +160,6 @@ void solarTracker() {
     digitalWrite(HRDIR, HIGH);  //one way
     digitalWrite(HLDIR, LOW);
     delay(drehzeit);
-    lc.clearDisplay(0);
     digitalWrite(HRDIR, LOW);
   } else if ( diff_oben > pos_toleranz && diff_unten > pos_toleranz ){ //(olint < orint || ulint < urint) && hlTaster) {
     //Bewegung nach links
@@ -172,7 +171,6 @@ void solarTracker() {
     digitalWrite(HRDIR, LOW);  //reverse
     digitalWrite(HLDIR, HIGH);
     delay(drehzeit);
-    lc.clearDisplay(0);
     digitalWrite(HLDIR, LOW);
   } else {
     digitalWrite(HRDIR, LOW);
@@ -191,7 +189,6 @@ void solarTracker() {
     digitalWrite(VUDIR, HIGH);
     digitalWrite(VODIR, LOW);
     delay(drehzeit);
-    lc.clearDisplay(0);
     digitalWrite(VUDIR, LOW);
   } else if ( diff_rechts > pos_toleranz && diff_links > pos_toleranz ) {  // || ulint < olint) && voTaster){
     //Bewegung nach oben
@@ -203,7 +200,6 @@ void solarTracker() {
     digitalWrite(VODIR, HIGH);
     digitalWrite(VUDIR, LOW);
     delay(drehzeit);
-    lc.clearDisplay(0);
     digitalWrite(VODIR, LOW);
   } else {
     digitalWrite(VODIR, LOW);
@@ -222,6 +218,7 @@ void solarTracker() {
   for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilLinksOben[m]);
 */
   delay(500);
+  lc.clearDisplay(0);
 }
 
 
