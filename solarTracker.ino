@@ -34,16 +34,18 @@ LedControl lc = LedControl(12, 10, 11, 1);
 #define HLDIR 6
 #define HRDIR 7
 // LDR's
-#define obenrechtsLDR 3
-#define obenlinksLDR 4
-#define untenrechtsLDR 5
-#define untenlinksLDR 6
+#define obenrechtsLDR 4
+#define obenlinksLDR 3
+#define untenrechtsLDR 6
+#define untenlinksLDR 5
 // Taster
 #define horlinksTaster 22
 #define horrechtsTaster 23
 #define vertuntenTaster 24
 #define vertobenTaster 25
 
+#define pos_toleranz 10
+#define neg_toleranz -10
 
 #define matrix 13
 
@@ -83,13 +85,10 @@ void setup() {
   Serial.println("            _          _____              _             ");
   Serial.println("           | |        |_   _|            | |            ");
   Serial.println("  ___  ___ | | __ _ _ __| |_ __ __ _  ___| | _____ _ __ ");
-  Serial.println(" / __|/ _ \| |/ _` | '__| | '__/ _` |/ __| |/ / _ \ '__|");
-  Serial.println(" \__ \ (_) | | (_| | |  | | | | (_| | (__|   <  __/ |   ");
-  Serial.println(" |___/\___/|_|\__,_|_|  \_/_|  \__,_|\___|_|\_\___|_|   ");
+  Serial.println(" / __|/ _ \\| |/ _` | \'__| | \'__/ _` |/ __| |/ / _ \\ \'__|");
+  Serial.println(" \\__ \\ (_) | | (_| | |  | | | | (_| | (__|   <  __/ |   ");
+  Serial.println(" |___/\\___/|_|\\__,_|_|  \\_/_|  \\__,_|\\___|_|\\_\\___|_|   ");
   Serial.println();
-  //--- Fotodioden ---
-  //analogRead(3)
-  //analogRead(4)
 
   // The MAX72XX is in power-saving mode on startup, we have to do a wakeup call
   lc.shutdown(0, false);
@@ -101,10 +100,10 @@ void setup() {
 
 void solarTracker() {
   // Intensität als Spannungswert...
-  orldr = analogRead(obenrechtsLDR);   //3
-  urldr = analogRead(untenrechtsLDR);  //5
-  olldr = analogRead(obenlinksLDR);    //4
-  ulldr = analogRead(untenlinksLDR);   //6
+  orldr = analogRead(obenrechtsLDR);   //4
+  urldr = analogRead(untenrechtsLDR);  //6
+  olldr = analogRead(obenlinksLDR);    //3
+  ulldr = analogRead(untenlinksLDR);   //5
   // Schalter für die Drehbereiche
   // Die Schalter befinden sich im High Zustand
   // sobald sie geschlossen sind gehen sie auf LOW
@@ -122,31 +121,58 @@ void solarTracker() {
   ldrmax = 200;
   // Intensitäten aufgrund der maximalen Itensität
   // Berechnen
-  int orint = (int)(orldr * 1.5) / ldrmax;
-  int urint = (int)(urldr * 1.5) / ldrmax;
-  int olint = (int)(olldr * 1.5) / ldrmax;
-  int ulint = (int)(ulldr * 1.5) / ldrmax;
+  float diff_oben   = orldr - olldr; // Horizontale Bewegung
+  float diff_unten  = urldr - ulldr;
+  float diff_links  = olldr - ulldr; // Vertikale Bewegung
+  float diff_rechts = orldr - urldr;
 
   // Motor"stärke" einstellen
   //analogWrite(VENABLE,180);
   //analogWrite(HENABLE,180);
   digitalWrite(VENABLE, HIGH);
   digitalWrite(HENABLE, HIGH);
-  
+  /*
+  Serial.print("ObenRechts  /  ObenLinks: ");
+  Serial.print(orldr);
+  Serial.print(" | ");
+  Serial.println(olldr);
+  Serial.print("UntenRechts / UntenLinks: ");
+  Serial.print(urldr);
+  Serial.print(" | ");
+  Serial.println(ulldr);
+  Serial.print("Oben/Unten: ");
+  Serial.print(diff_oben);
+  Serial.print(" | ");
+  Serial.println(diff_unten);
+  Serial.print("Links/rechts: ");
+  Serial.print(diff_rechts);
+  Serial.print(" | ");
+  Serial.println(diff_links);*/
   // Horizontale Bewegung
-  if ((orint < olint || urint < ulint) &&  hrTaster) {
+  
+  if ( diff_oben < neg_toleranz && diff_unten < neg_toleranz ){ // &&  hrTaster) {
     // Bewegung nach rechts
-    Serial.print(" -> ");
+    for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilRechts[m]);
+    Serial.print(" <- ");
+    Serial.print(diff_oben);
+    Serial.print(" | ");
+    Serial.println(diff_unten);
     digitalWrite(HRDIR, HIGH);  //one way
     digitalWrite(HLDIR, LOW);
     delay(drehzeit);
+    lc.clearDisplay(0);
     digitalWrite(HRDIR, LOW);
-  } else if ((olint < orint || ulint < urint) && hlTaster) {
+  } else if ( diff_oben > pos_toleranz && diff_unten > pos_toleranz ){ //(olint < orint || ulint < urint) && hlTaster) {
     //Bewegung nach links
-    Serial.print(" <- ");
+    for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilLinks[m]);
+    Serial.print(" -> ");
+    Serial.print(diff_oben);
+    Serial.print(" | ");
+    Serial.println(diff_unten);
     digitalWrite(HRDIR, LOW);  //reverse
     digitalWrite(HLDIR, HIGH);
     delay(drehzeit);
+    lc.clearDisplay(0);
     digitalWrite(HLDIR, LOW);
   } else {
     digitalWrite(HRDIR, LOW);
@@ -155,75 +181,47 @@ void solarTracker() {
   }
 
   // Vertikale Bewegung
-  if (orint < urint) {  //|| olint < ulint) && vuTaster){
+  if ( diff_rechts < neg_toleranz && diff_links < neg_toleranz ) {  //|| olint < ulint) && vuTaster){
     // Bewegung nach unten
-    Serial.print(" v  : ObenRechts/UntenRechts: ");
-    Serial.print(orint);
+    for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilUnten[m]);
+    Serial.print(" v  ");
+    Serial.print(diff_rechts);
     Serial.print(" | ");
-    Serial.println(urint);
+    Serial.println(diff_links);
     digitalWrite(VUDIR, HIGH);
     digitalWrite(VODIR, LOW);
     delay(drehzeit);
+    lc.clearDisplay(0);
     digitalWrite(VUDIR, LOW);
-  } else if (urint < orint) {  // || ulint < olint) && voTaster){
+  } else if ( diff_rechts > pos_toleranz && diff_links > pos_toleranz ) {  // || ulint < olint) && voTaster){
     //Bewegung nach oben
-    Serial.print(" ^  : ObenRechts/UntenRechts: ");
-    Serial.print(orint);
+    for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilOben[m]);
+    Serial.print(" ^  ");
+    Serial.print(diff_links);
     Serial.print(" | ");
-    Serial.println(urint);
+    Serial.println(diff_rechts);
     digitalWrite(VODIR, HIGH);
     digitalWrite(VUDIR, LOW);
     delay(drehzeit);
+    lc.clearDisplay(0);
     digitalWrite(VODIR, LOW);
   } else {
-    Serial.print(" -  : ObenRechts/UntenRechts: ");
-    Serial.print(orint);
-    Serial.print(" | ");
-    Serial.println(urint);
     digitalWrite(VODIR, LOW);
     digitalWrite(VUDIR, LOW);
     delay(100);
   }
-
-  lc.setIntensity(0, orint);
+/*
+  GrimsGrams
   for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilLinks[m]);
-  delay(delaytime2);
-  lc.clearDisplay(0);
-
-  lc.setIntensity(0, olint);
   for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilLinksUnten[m]);
-  delay(delaytime2);
-  lc.clearDisplay(0);
-
-  lc.setIntensity(0, olint);
   for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilUnten[m]);
-  delay(delaytime2);
-  lc.clearDisplay(0);
-  
-  lc.setIntensity(0, olint);
   for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilRechtsUnten[m]);
-  delay(delaytime2);
-  lc.clearDisplay(0);
-
-  lc.setIntensity(0, urint);
   for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilRechts[m]);
-  delay(delaytime2);
-  lc.clearDisplay(0);
-
-  lc.setIntensity(0, urint);
   for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilRechtsOben[m]);
-  delay(delaytime2);
-  lc.clearDisplay(0);
-
-  lc.setIntensity(0, ulint);
   for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilOben[m]);
-  delay(delaytime2);
-  lc.clearDisplay(0);
-
-  lc.setIntensity(0, ulint);
   for (int m = 0; m <= 7; m++) lc.setRow(0, m, pfeilLinksOben[m]);
-  delay(delaytime2);
-  lc.clearDisplay(0);
+*/
+  delay(500);
 }
 
 
